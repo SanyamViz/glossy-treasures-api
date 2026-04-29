@@ -53,15 +53,29 @@ router.post('/', async (req, res, next) => {
         total: parseFloat(total),
         giftNote: giftNote || null,
         items: {
-          create: items.map((item) => ({
-            productSlug: item.productSlug,
-            productName: item.productName,
-            category: item.category,
-            price: parseFloat(item.price),
-            quantity: parseInt(item.quantity, 10),
-            selectedSize: item.selectedSize || null,
-            selectedFragrance: item.selectedFragrance || null,
-          })),
+          create: items.map((item) => {
+            const opts = item.selectedOptions || {};
+            // For candles, it's 'size' and 'fragrance'. 
+            // For resin, it's 'color', 'size', 'stand', 'personalization'.
+            // We'll combine them to fit into our schema fields.
+            const size = opts.size || null;
+            const extraDetails = [
+              opts.fragrance,
+              opts.color,
+              opts.stand ? `Stand: ${opts.stand}` : null,
+              opts.personalization ? `Msg: ${opts.personalization}` : null
+            ].filter(Boolean).join(' | ');
+
+            return {
+              productSlug: item.productSlug,
+              productName: item.productName,
+              category: item.category,
+              price: parseFloat(item.price),
+              quantity: parseInt(item.quantity, 10),
+              selectedSize: size,
+              selectedFragrance: extraDetails || null,
+            };
+          }),
         },
       },
       include: { items: true },

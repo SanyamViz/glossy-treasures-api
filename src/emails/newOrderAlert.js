@@ -16,7 +16,7 @@ function buildAdminItemRows(items) {
         <div style="font-size:12px; color:#7a6252; margin-top:3px;">
           Slug: ${item.productSlug} &bull; ${item.category}
           ${item.selectedSize ? ` &bull; Size: ${item.selectedSize}` : ''}
-          ${item.selectedFragrance ? ` &bull; Fragrance: ${item.selectedFragrance}` : ''}
+          ${item.selectedFragrance ? ` &bull; ${item.category === 'candle' ? 'Fragrance' : 'Options'}: ${item.selectedFragrance}` : ''}
         </div>
       </td>
       <td style="padding: 10px 8px; border-bottom: 1px solid #e8d5b5; text-align:center; font-size:14px; color:#5c4a37;">x${item.quantity}</td>
