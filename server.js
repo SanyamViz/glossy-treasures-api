@@ -14,13 +14,24 @@ const PORT = process.env.PORT || 5000;
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:5174',
+  'https://glossytreasures.shop',
+  'https://www.glossytreasures.shop',
+  'https://glossy-treasures.vercel.app',
   process.env.FRONTEND_URL,
 ].filter(Boolean);
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+      // Allow if no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      
+      // Allow if explicitly in the list
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      
+      // Allow Vercel preview URLs
+      if (origin.endsWith('.vercel.app')) return callback(null, true);
+      
       callback(new Error(`CORS blocked: ${origin}`));
     },
     credentials: true,
