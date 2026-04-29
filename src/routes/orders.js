@@ -110,7 +110,19 @@ router.get('/', adminAuth, async (req, res, next) => {
   }
 });
 
-// ── GET /:orderNumber — Single order by orderNumber ───────────────────────────
+// ── GET /customer/:email — All orders for a specific customer ────────────────
+router.get('/customer/:email', async (req, res, next) => {
+  try {
+    const orders = await prisma.order.findMany({
+      where: { email: req.params.email },
+      include: { items: true },
+      orderBy: { createdAt: 'desc' },
+    });
+    res.json(orders);
+  } catch (err) {
+    next(err);
+  }
+});
 router.get('/:orderNumber', async (req, res, next) => {
   try {
     const order = await prisma.order.findUnique({
