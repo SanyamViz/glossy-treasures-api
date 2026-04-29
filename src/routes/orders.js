@@ -2,6 +2,7 @@ const express = require('express');
 const { PrismaClient } = require('@prisma/client');
 const { sendOrderConfirmation } = require('../emails/orderConfirmation');
 const { sendNewOrderAlert } = require('../emails/newOrderAlert');
+const { sendOrderCancelled } = require('../emails/orderCancelled');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -30,7 +31,7 @@ router.post('/', async (req, res, next) => {
       name, email, phone,
       address, city, state, pincode,
       paymentMethod, total, giftNote,
-      items,
+      items, discountCode, discountAmount
     } = req.body;
 
     if (!name || !email || !phone || !address || !city || !state || !pincode || !paymentMethod || !total || !items?.length) {
@@ -51,6 +52,8 @@ router.post('/', async (req, res, next) => {
         pincode,
         paymentMethod,
         total: parseFloat(total),
+        discountCode: discountCode || null,
+        discountAmount: parseFloat(discountAmount || 0),
         giftNote: giftNote || null,
         items: {
           create: items.map((item) => {
@@ -80,6 +83,18 @@ router.post('/', async (req, res, next) => {
       },
       include: { items: true },
     });
+    
+    // If a discount code was used, increment its usage count
+    if (discountCode) {
+      try {
+        await prisma.discountCode.update({
+          where: { code: discountCode.toUpperCase() },
+          data: { usedCount: { increment: 1 } }
+        });
+      } catch (err) {
+        console.error('Failed to increment discount code usage:', err.message);
+      }
+    }
 
     // Fire emails (non-blocking — don't fail order if email fails)
     try {
@@ -149,7 +164,14 @@ router.patch('/:orderNumber/status', adminAuth, async (req, res, next) => {
     const order = await prisma.order.update({
       where: { orderNumber: req.params.orderNumber },
       data: { status },
+      include: { items: true }
     });
+
+    // If order is cancelled, send email
+    if (status === 'CANCELLED') {
+      sendOrderCancelled(order).catch(err => console.error('Cancellation email failed:', err.message));
+    }
+
     res.json({ message: 'Status updated', order });
   } catch (err) {
     if (err.code === 'P2025') return res.status(404).json({ error: 'Order not found' });

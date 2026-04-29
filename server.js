@@ -5,6 +5,7 @@ const cors = require('cors');
 const ordersRouter = require('./src/routes/orders');
 const contactRouter = require('./src/routes/contact');
 const wholesaleRouter = require('./src/routes/wholesale');
+const discountRoutes = require('./src/routes/discounts');
 const errorHandler = require('./src/middleware/errorHandler');
 
 const app = express();
@@ -33,6 +34,7 @@ app.get('/api/health', (_req, res) => {
 app.use('/api/orders', ordersRouter);
 app.use('/api/contact', contactRouter);
 app.use('/api/wholesale', wholesaleRouter);
+app.use('/api/discounts', discountRoutes);
 
 // ── 404 ───────────────────────────────────────────────────────────────────────
 app.use((_req, res) => {

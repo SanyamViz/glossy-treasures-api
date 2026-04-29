@@ -30,12 +30,27 @@ model Order {
   state         String
   pincode       String
   paymentMethod String
+  discountCode  String?
+  discountAmount Float      @default(0)
   total         Float
   status        OrderStatus @default(PENDING)
   giftNote      String?
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
   items         OrderItem[]
+}
+
+model DiscountCode {
+  id           Int      @id @default(autoincrement())
+  code         String   @unique
+  type         String   // 'percentage' or 'fixed'
+  value        Float
+  minOrder     Float    @default(0)
+  maxUses      Int?
+  usedCount    Int      @default(0)
+  expiresAt    DateTime?
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
 }
 
 model OrderItem {
