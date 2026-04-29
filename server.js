@@ -19,7 +19,7 @@ app.use(cors({
   methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
-app.options('(.*)', cors());
+
 
 // ── Body Parsing ──────────────────────────────────────────────────────────────
 app.use(express.json());
