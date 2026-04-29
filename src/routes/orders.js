@@ -82,12 +82,14 @@ router.post('/', async (req, res, next) => {
     });
 
     // Fire emails (non-blocking — don't fail order if email fails)
-    sendOrderConfirmation(order).catch((err) =>
-      console.error('Order confirmation email failed:', err.message)
-    );
-    sendNewOrderAlert(order).catch((err) =>
-      console.error('New order alert email failed:', err.message)
-    );
+    try {
+      await Promise.all([
+        sendOrderConfirmation(order).catch(err => console.error('Customer email failed:', err.message)),
+        sendNewOrderAlert(order).catch(err => console.error('Admin alert failed:', err.message))
+      ]);
+    } catch (emailErr) {
+      console.error('Email dispatch system error:', emailErr.message);
+    }
 
     res.status(201).json({ orderNumber: order.orderNumber, orderId: order.id });
   } catch (err) {
