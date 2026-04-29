@@ -110,19 +110,20 @@ router.get('/', adminAuth, async (req, res, next) => {
   }
 });
 
-// ── GET /customer/:email — All orders for a specific customer ────────────────
-router.get('/customer/:email', async (req, res, next) => {
+// GET /api/orders/customer/:email — All orders for a specific customer
+router.get('/customer/:email', async (req, res) => {
   try {
     const orders = await prisma.order.findMany({
       where: { email: req.params.email },
       include: { items: true },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: 'desc' }
     });
     res.json(orders);
-  } catch (err) {
-    next(err);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch orders' });
   }
 });
+
 router.get('/:orderNumber', async (req, res, next) => {
   try {
     const order = await prisma.order.findUnique({
