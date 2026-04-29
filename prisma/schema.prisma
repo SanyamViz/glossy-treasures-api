@@ -1,0 +1,73 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+model Order {
+  id            Int         @id @default(autoincrement())
+  orderNumber   String      @unique
+  name          String
+  email         String
+  phone         String
+  address       String
+  city          String
+  state         String
+  pincode       String
+  paymentMethod String
+  total         Float
+  status        OrderStatus @default(PENDING)
+  giftNote      String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  items         OrderItem[]
+}
+
+model OrderItem {
+  id                Int    @id @default(autoincrement())
+  orderId           Int
+  productSlug       String
+  productName       String
+  category          String
+  price             Float
+  quantity          Int
+  selectedSize      String?
+  selectedFragrance String?
+  order             Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model Contact {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String
+  phone     String?
+  message   String
+  createdAt DateTime @default(now())
+}
+
+model WholesaleEnquiry {
+  id        Int      @id @default(autoincrement())
+  name      String
+  business  String
+  email     String
+  phone     String
+  interest  String
+  quantity  String
+  message   String?
+  createdAt DateTime @default(now())
+}
