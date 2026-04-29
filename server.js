@@ -12,14 +12,14 @@ const PORT = process.env.PORT || 5000;
 
 // ── CORS ──────────────────────────────────────────────────────────────────────
 app.use(cors({
-  origin: function(origin, callback) {
+  origin: function (origin, callback) {
     callback(null, true);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
-app.options('*', cors());
+app.options('(.*)', cors());
 
 // ── Body Parsing ──────────────────────────────────────────────────────────────
 app.use(express.json());
