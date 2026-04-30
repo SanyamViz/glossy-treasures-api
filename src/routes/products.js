@@ -85,8 +85,12 @@ router.post('/', adminAuth, upload.array('images', 6), async (req, res) => {
     });
     res.status(201).json(product);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Failed to create product' });
+    console.error('Product creation error:', error.message);
+    console.error('Full error:', error);
+    res.status(500).json({ 
+      error: 'Failed to create product',
+      details: error.message 
+    });
   }
 });
 
