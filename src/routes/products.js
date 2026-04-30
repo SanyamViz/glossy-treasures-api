@@ -47,6 +47,9 @@ router.get('/:slug', async (req, res) => {
 
 // POST create product with image upload (admin)
 router.post('/', adminAuth, upload.array('images', 6), async (req, res) => {
+  console.log('--- Product Creation Start ---');
+  console.log('Body:', req.body);
+  console.log('Files:', req.files?.length || 0);
   try {
     const {
       name, description, category, type, basePrice, originalPrice,
@@ -54,6 +57,8 @@ router.post('/', adminAuth, upload.array('images', 6), async (req, res) => {
       burnTime, scentFamily, ingredients,
       sizes, fragrances, colors, personalization
     } = req.body;
+
+    if (!name) throw new Error('Product name is required');
 
     const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     const images = req.files ? req.files.map(f => f.path) : [];
@@ -65,8 +70,8 @@ router.post('/', adminAuth, upload.array('images', 6), async (req, res) => {
         description,
         category,
         type: type || null,
-        basePrice: parseFloat(basePrice),
-        originalPrice: originalPrice ? parseFloat(originalPrice) : null,
+        basePrice: parseFloat(basePrice) || 0,
+        originalPrice: (originalPrice && originalPrice !== 'null' && originalPrice !== '') ? parseFloat(originalPrice) : null,
         images,
         badge: badge || null,
         occasion: occasion || null,
@@ -77,12 +82,13 @@ router.post('/', adminAuth, upload.array('images', 6), async (req, res) => {
         burnTime: burnTime || null,
         scentFamily: scentFamily || null,
         ingredients: ingredients || null,
-        sizes: sizes ? JSON.parse(sizes) : null,
-        fragrances: fragrances ? JSON.parse(fragrances) : null,
-        colors: colors ? JSON.parse(colors) : null,
-        personalization: personalization ? JSON.parse(personalization) : null,
+        sizes: (sizes && sizes !== 'undefined') ? JSON.parse(sizes) : null,
+        fragrances: (fragrances && fragrances !== 'undefined') ? JSON.parse(fragrances) : null,
+        colors: (colors && colors !== 'undefined') ? JSON.parse(colors) : null,
+        personalization: (personalization && personalization !== 'undefined') ? JSON.parse(personalization) : null,
       }
     });
+    console.log('Product created successfully:', product.id);
     res.status(201).json(product);
   } catch (error) {
     console.error('Product creation error:', error.message);
@@ -96,6 +102,7 @@ router.post('/', adminAuth, upload.array('images', 6), async (req, res) => {
 
 // PUT update product (admin)
 router.put('/:id', adminAuth, upload.array('images', 6), async (req, res) => {
+  console.log('--- Product Update Start ---', req.params.id);
   try {
     const {
       name, description, category, type, basePrice, originalPrice,
@@ -106,37 +113,43 @@ router.put('/:id', adminAuth, upload.array('images', 6), async (req, res) => {
     } = req.body;
 
     const newImages = req.files ? req.files.map(f => f.path) : [];
-    const existing = existingImages ? JSON.parse(existingImages) : [];
+    const existing = (existingImages && existingImages !== 'undefined') ? JSON.parse(existingImages) : [];
     const images = [...existing, ...newImages];
+
+    const updateData = {};
+    if (name) {
+      updateData.name = name;
+      updateData.slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    }
+    if (description) updateData.description = description;
+    if (category) updateData.category = category;
+    if (type !== undefined) updateData.type = type || null;
+    if (basePrice !== undefined) updateData.basePrice = parseFloat(basePrice) || 0;
+    if (originalPrice !== undefined) updateData.originalPrice = (originalPrice && originalPrice !== 'null' && originalPrice !== '') ? parseFloat(originalPrice) : null;
+    if (images.length > 0) updateData.images = images;
+    if (badge !== undefined) updateData.badge = badge || null;
+    if (occasion !== undefined) updateData.occasion = occasion || null;
+    if (inStock !== undefined) updateData.inStock = inStock === 'true';
+    if (stock !== undefined) updateData.stock = parseInt(stock) || 0;
+    if (bestseller !== undefined) updateData.bestseller = bestseller === 'true';
+    if (active !== undefined) updateData.active = active !== 'false';
+    if (burnTime !== undefined) updateData.burnTime = burnTime || null;
+    if (scentFamily !== undefined) updateData.scentFamily = scentFamily || null;
+    if (ingredients !== undefined) updateData.ingredients = ingredients || null;
+    if (sizes !== undefined) updateData.sizes = (sizes && sizes !== 'undefined') ? JSON.parse(sizes) : null;
+    if (fragrances !== undefined) updateData.fragrances = (fragrances && fragrances !== 'undefined') ? JSON.parse(fragrances) : null;
+    if (colors !== undefined) updateData.colors = (colors && colors !== 'undefined') ? JSON.parse(colors) : null;
+    if (personalization !== undefined) updateData.personalization = (personalization && personalization !== 'undefined') ? JSON.parse(personalization) : null;
 
     const product = await prisma.product.update({
       where: { id: parseInt(req.params.id) },
-      data: {
-        name,
-        description,
-        category,
-        type: type || null,
-        basePrice: parseFloat(basePrice),
-        originalPrice: originalPrice ? parseFloat(originalPrice) : null,
-        images,
-        badge: badge || null,
-        occasion: occasion || null,
-        inStock: inStock === 'true',
-        stock: parseInt(stock) || 0,
-        bestseller: bestseller === 'true',
-        active: active !== 'false',
-        burnTime: burnTime || null,
-        scentFamily: scentFamily || null,
-        ingredients: ingredients || null,
-        sizes: sizes ? JSON.parse(sizes) : null,
-        fragrances: fragrances ? JSON.parse(fragrances) : null,
-        colors: colors ? JSON.parse(colors) : null,
-        personalization: personalization ? JSON.parse(personalization) : null,
-      }
+      data: updateData
     });
+    console.log('Product updated successfully:', product.id);
     res.json(product);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to update product' });
+    console.error('Update error:', error);
+    res.status(500).json({ error: 'Failed to update product', details: error.message });
   }
 });
 
