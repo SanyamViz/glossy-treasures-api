@@ -210,7 +210,7 @@ async function sendOrderConfirmation(order) {
 </html>`;
 
   await resend.emails.send({
-    from: 'Glossy Treasures <Glossy Treasures <orders@glossytreasures.shop>',
+    from: 'Glossy Treasures <orders@glossytreasures.shop>',
     to: order.email,
     subject: `Your Glossy Treasures order is confirmed! 🎉 #${order.orderNumber}`,
     html,
