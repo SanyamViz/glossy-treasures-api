@@ -2,8 +2,15 @@
 function errorHandler(err, req, res, next) {
   console.error(`[Error] ${req.method} ${req.path}:`);
   console.error('Message:', err.message);
+  console.error('Name:', err.name);
   console.error('Stack:', err.stack);
-  console.error('Full Error Object:', JSON.stringify(err, null, 2));
+  
+  // Custom properties often found in errors
+  const details = {};
+  Object.getOwnPropertyNames(err).forEach(key => {
+    details[key] = err[key];
+  });
+  console.error('Full Error Details:', details);
 
   // Prisma known request errors
   if (err.code && err.code.startsWith('P')) {
@@ -14,6 +21,7 @@ function errorHandler(err, req, res, next) {
   res.status(statusCode).json({
     error: err.name || 'Internal Server Error',
     details: err.message || 'No detailed message provided',
+    fullError: process.env.NODE_ENV === 'development' ? details : undefined
   });
 }
 

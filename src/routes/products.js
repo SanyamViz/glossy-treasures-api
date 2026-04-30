@@ -45,10 +45,29 @@ router.get('/:slug', async (req, res) => {
   }
 });
 
+// Helper to wrap multer for better error handling
+const handleUpload = (req, res, next) => {
+  upload.array('images', 6)(req, res, (err) => {
+    if (err) {
+      console.error('Multer/Cloudinary Error:', err);
+      return res.status(500).json({ 
+        error: 'Upload Error', 
+        details: err.message || 'Error during file upload/Cloudinary storage' 
+      });
+    }
+    next();
+  });
+};
+
 // POST create product with image upload (admin)
-router.post('/', adminAuth, upload.array('images', 6), async (req, res) => {
+router.post('/', adminAuth, handleUpload, async (req, res) => {
   console.log('--- Product Creation Start ---');
-  console.log('Body:', req.body);
+  console.log('Env Check:', {
+    hasCloudName: !!process.env.CLOUDINARY_CLOUD_NAME,
+    hasApiKey: !!process.env.CLOUDINARY_API_KEY,
+    hasApiSecret: !!process.env.CLOUDINARY_API_SECRET
+  });
+  console.log('Body Keys:', Object.keys(req.body));
   console.log('Files:', req.files?.length || 0);
   try {
     const {
@@ -99,6 +118,8 @@ router.post('/', adminAuth, upload.array('images', 6), async (req, res) => {
     });
   }
 });
+
+
 
 // PUT update product (admin)
 router.put('/:id', adminAuth, upload.array('images', 6), async (req, res) => {
