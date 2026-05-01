@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
 // Auth middleware
 const adminAuth = (req, res, next) => {
   const auth = req.headers.authorization;
-  if (auth !== 'Bearer glossy2024') return res.status(401).json({ error: 'Unauthorized' });
+  if (auth !== 'Bearer AngelManchanda@152116') return res.status(401).json({ error: 'Unauthorized' });
   next();
 };
 
@@ -176,6 +176,13 @@ router.put('/:id', adminAuth, upload.array('images', 6), async (req, res) => {
     res.status(500).json({ error: 'Failed to update product', details: error.message });
   }
 });
+
+const normalized = products.map(p => ({
+  ...p,
+  price: p.basePrice,
+  image: p.images?.[0] || null,
+}));
+res.json(normalized);
 
 // DELETE product (admin)
 router.delete('/:id', adminAuth, async (req, res) => {
