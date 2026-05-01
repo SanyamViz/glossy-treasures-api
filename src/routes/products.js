@@ -175,14 +175,16 @@ router.put('/:id', adminAuth, upload.array('images', 6), async (req, res) => {
     console.error('Update error:', error);
     res.status(500).json({ error: 'Failed to update product', details: error.message });
   }
+  //normalize products for frontend
+  const normalized = products.map(p => ({
+    ...p,
+    price: p.basePrice,
+    image: p.images?.[0] || null,
+  }));
+  res.json(normalized);
 });
 
-const normalized = products.map(p => ({
-  ...p,
-  price: p.basePrice,
-  image: p.images?.[0] || null,
-}));
-res.json(normalized);
+
 
 // DELETE product (admin)
 router.delete('/:id', adminAuth, async (req, res) => {
