@@ -18,7 +18,10 @@ router.get('/', async (req, res) => {
     const { category, type, occasion, bestseller, all } = req.query;
     const where = {};
     if (all !== 'true') where.active = true;
-    if (category) where.category = category;
+    if (category) where.category = {
+      equals: category,
+      mode: 'insensitive'
+    };
     if (type) where.type = type;
     if (occasion) where.occasion = occasion;
     if (bestseller) where.bestseller = true;
@@ -50,9 +53,9 @@ const handleUpload = (req, res, next) => {
   upload.array('images', 6)(req, res, (err) => {
     if (err) {
       console.error('Multer/Cloudinary Error:', err);
-      return res.status(500).json({ 
-        error: 'Upload Error', 
-        details: err.message || 'Error during file upload/Cloudinary storage' 
+      return res.status(500).json({
+        error: 'Upload Error',
+        details: err.message || 'Error during file upload/Cloudinary storage'
       });
     }
     next();
@@ -112,9 +115,9 @@ router.post('/', adminAuth, handleUpload, async (req, res) => {
   } catch (error) {
     console.error('Product creation error:', error.message);
     console.error('Full error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to create product',
-      details: error.message 
+      details: error.message
     });
   }
 });
