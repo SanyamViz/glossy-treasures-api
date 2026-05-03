@@ -18,7 +18,7 @@ function generateOrderNumber() {
 function adminAuth(req, res, next) {
   const authHeader = req.headers['authorization'];
   const password = authHeader && authHeader.replace('Bearer ', '');
-  if (password !== 'glossy2024') {
+  if (password !== 'AngelManchanda@152116') {
     return res.status(401).json({ error: 'Unauthorized' });
   }
   next();
@@ -83,7 +83,7 @@ router.post('/', async (req, res, next) => {
       },
       include: { items: true },
     });
-    
+
     // If a discount code was used, increment its usage count
     if (discountCode) {
       try {
