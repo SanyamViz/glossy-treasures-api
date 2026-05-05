@@ -157,6 +157,15 @@ async function sendOrderConfirmation(order) {
                     <td colspan="2" style="padding: 20px 8px 8px; text-align:right; font-size:13px; color:#5c4a37; font-weight:600; letter-spacing:1px; text-transform:uppercase;">Order Total</td>
                     <td style="padding: 20px 8px 8px; text-align:right; font-size:20px; font-weight:700; color:#C4948A;">${formatINR(order.total)}</td>
                   </tr>
+                  ${order.discountCode ? `
+                  <tr>
+                    <td colspan="2" style="padding: 12px 8px; text-align:right; font-size:13px; color:#5c4a37;">
+                      Discount (${order.discountCode})
+                    </td>
+                    <td style="padding: 12px 8px; text-align:right; font-size:13px; color:#25D366; font-weight:600;">
+                      -₹${parseFloat(order.discountAmount || 0).toLocaleString('en-IN')}
+                    </td>
+                  </tr>` : ''}
                 </tfoot>
               </table>
             </td>

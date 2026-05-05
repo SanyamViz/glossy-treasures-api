@@ -63,6 +63,7 @@ model OrderItem {
   quantity          Int
   selectedSize      String?
   selectedFragrance String?
+  personalization   String?
   order             Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
 }
 

@@ -53,7 +53,7 @@ router.post('/', async (req, res, next) => {
         paymentMethod,
         total: parseFloat(total),
         discountCode: discountCode || null,
-        discountAmount: parseFloat(discountAmount || 0),
+        discountAmount: discountAmount ? parseFloat(discountAmount) : 0,
         giftNote: giftNote || null,
         items: {
           create: items.map((item) => {
