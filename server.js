@@ -7,6 +7,7 @@ const contactRouter = require('./src/routes/contact');
 const wholesaleRouter = require('./src/routes/wholesale');
 const discountRoutes = require('./src/routes/discounts');
 const productRoutes = require('./src/routes/products');
+const newsletterRoutes = require('./src/routes/newsletter');
 
 const errorHandler = require('./src/middleware/errorHandler');
 
@@ -38,6 +39,7 @@ app.use('/api/contact', contactRouter);
 app.use('/api/wholesale', wholesaleRouter);
 app.use('/api/discounts', discountRoutes);
 app.use('/api/products', productRoutes);
+app.use('/api/newsletter', newsletterRoutes);
 
 
 // ── 404 ───────────────────────────────────────────────────────────────────────

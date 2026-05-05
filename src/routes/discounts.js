@@ -70,6 +70,16 @@ router.post('/validate', async (req, res) => {
   try {
     const { code, orderTotal } = req.body;
     
+    // Hardcoded ANGEL10 logic
+    if (code.toUpperCase() === 'ANGEL10') {
+      let discountAmount = (orderTotal * 10) / 100;
+      return res.json({ 
+        valid: true, 
+        discount: discountAmount, 
+        message: '10% welcome discount applied!' 
+      });
+    }
+
     const discount = await prisma.discountCode.findUnique({
       where: { code: code.toUpperCase() }
     });

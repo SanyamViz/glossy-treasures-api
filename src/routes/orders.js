@@ -61,7 +61,7 @@ router.post('/', async (req, res, next) => {
             // For candles, it's 'size' and 'fragrance'. 
             // For resin, it's 'color', 'size', 'stand', 'personalization'.
             // We'll combine them to fit into our schema fields.
-            const size = opts.size || null;
+            const size = opts.size || item.selectedSize || null;
             const extraDetails = [
               opts.fragrance,
               opts.color,
