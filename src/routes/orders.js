@@ -3,6 +3,7 @@ const { PrismaClient } = require('@prisma/client');
 const { sendOrderConfirmation } = require('../emails/orderConfirmation');
 const { sendNewOrderAlert } = require('../emails/newOrderAlert');
 const { sendOrderCancelled } = require('../emails/orderCancelled');
+const { sendDiscountConfirmation } = require('../emails/discountConfirmation');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -104,6 +105,16 @@ router.post('/', async (req, res, next) => {
       ]);
     } catch (emailErr) {
       console.error('Email dispatch system error:', emailErr.message);
+    }
+
+    if (order.discountCode && order.discountAmount > 0) {
+      sendDiscountConfirmation(
+        order.email,
+        order.name,
+        order.discountCode,
+        order.discountAmount,
+        order.orderNumber
+      ).catch(err => console.error('Discount email error:', err));
     }
 
     res.status(201).json({ orderNumber: order.orderNumber, orderId: order.id });
