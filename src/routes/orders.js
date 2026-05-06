@@ -39,8 +39,8 @@ function adminAuth(req, res, next) {
 
 // ── POST / — Create a new order (DB ONLY) ─────────────────────────────────────
 router.post('/', async (req, res, next) => {
-  console.log('--- Order Creation Start ---');
-  console.log('Body:', JSON.stringify(req.body, null, 2));
+  console.log('--- STEP 1: /api/orders HIT ---');
+  console.log('Request body:', JSON.stringify(req.body, null, 2));
 
   try {
     const {
@@ -100,12 +100,12 @@ router.post('/', async (req, res, next) => {
       },
     };
 
-    console.log('Saving to DB...');
+    console.log('STEP 2: Saving to DB...');
     const order = await prisma.order.create({
       data: orderData,
       include: { items: true },
     });
-    console.log('Order saved in DB:', order.id);
+    console.log('STEP 3: Order saved in DB:', order.id);
 
     // 2. Discount code usage
     if (discountCode) {
@@ -137,8 +137,14 @@ router.post('/', async (req, res, next) => {
       orderId: order.id
     });
   } catch (err) {
-    console.error('ORDER API ERROR:', err);
-    res.status(500).json({ error: 'Internal Server Error', message: err.message });
+    console.error('FULL BACKEND ERROR (Orders):', err);
+    console.error('STACK:', err.stack);
+    res.status(500).json({ 
+      success: false,
+      error: 'Internal Server Error', 
+      message: err.message,
+      stack: err.stack
+    });
   }
 });
 
