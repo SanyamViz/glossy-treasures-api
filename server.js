@@ -42,7 +42,7 @@ app.use('/api/wholesale', wholesaleRouter);
 app.use('/api/discounts', discountRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/newsletter', newsletterRoutes);
-app.use('/api/payments', paymentsRouter);
+app.use('/api', paymentsRouter); // Maps to /api/create-order
 
 
 // ── 404 ───────────────────────────────────────────────────────────────────────
