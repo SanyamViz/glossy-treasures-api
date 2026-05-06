@@ -67,8 +67,19 @@ model OrderItem {
   quantity          Int
   selectedSize      String?
   selectedFragrance String?
+  selectedColor     String?
   personalization   String?
   order             Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model Review {
+  id          Int      @id @default(autoincrement())
+  productSlug String
+  customerName String
+  rating      Int
+  comment     String
+  verified    Boolean  @default(false)
+  createdAt   DateTime @default(now())
 }
 
 model Contact {

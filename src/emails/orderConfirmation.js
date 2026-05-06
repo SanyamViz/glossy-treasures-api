@@ -36,6 +36,7 @@ function buildItemRows(items) {
         <div style="font-size: 12px; color: #9c7c5a; margin-top: 3px;">
           ${item.category}
           ${item.selectedSize ? ` &bull; Size: ${item.selectedSize}` : ''}
+          ${item.selectedColor ? ` &bull; Color: ${item.selectedColor}` : ''}
           ${item.selectedFragrance ? ` &bull; ${item.category === 'candle' ? 'Fragrance' : 'Options'}: ${item.selectedFragrance}` : ''}
         </div>
       </td>

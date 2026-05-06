@@ -12,6 +12,38 @@ const adminAuth = (req, res, next) => {
   next();
 };
 
+// GET /search — search products
+router.get('/search', async (req, res) => {
+  try {
+    const { q } = req.query;
+    if (!q || q.length < 2) return res.json([]);
+
+    const products = await prisma.product.findMany({
+      where: {
+        active: true,
+        OR: [
+          { name: { contains: q, mode: 'insensitive' } },
+          { description: { contains: q, mode: 'insensitive' } },
+          { category: { contains: q, mode: 'insensitive' } },
+          { scentFamily: { contains: q, mode: 'insensitive' } },
+          { type: { contains: q, mode: 'insensitive' } },
+        ]
+      },
+      take: 8,
+    });
+
+    const normalized = products.map(p => ({
+      ...p,
+      price: p.basePrice,
+      image: p.images?.[0] || null,
+    }));
+
+    res.json(normalized);
+  } catch (error) {
+    res.status(500).json({ error: 'Search failed' });
+  }
+});
+
 // GET all products (public)
 router.get('/', async (req, res) => {
   try {

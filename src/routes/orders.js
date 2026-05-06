@@ -78,23 +78,16 @@ router.post('/', async (req, res, next) => {
       status: paymentMethod === 'cod' ? 'CONFIRMED' : 'PENDING',
       items: {
         create: items.map((item) => {
-          const opts = item.selectedOptions || {};
-          const size = opts.size || item.selectedSize || null;
-          const extraDetails = [
-            opts.fragrance,
-            opts.color,
-            opts.stand ? `Stand: ${opts.stand}` : null,
-            opts.personalization ? `Msg: ${opts.personalization}` : null
-          ].filter(Boolean).join(' | ');
-
           return {
             productSlug: item.productSlug,
             productName: item.productName,
             category: item.category,
             price: parseFloat(item.price),
             quantity: parseInt(item.quantity, 10),
-            selectedSize: size,
-            selectedFragrance: extraDetails || null,
+            selectedSize: item.selectedSize || null,
+            selectedFragrance: item.selectedFragrance || null,
+            selectedColor: item.selectedColor || null,
+            personalization: item.personalization || null,
           };
         }),
       },
