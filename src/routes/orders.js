@@ -4,6 +4,13 @@ const { sendOrderConfirmation } = require('../emails/orderConfirmation');
 const { sendNewOrderAlert } = require('../emails/newOrderAlert');
 const { sendOrderCancelled } = require('../emails/orderCancelled');
 const { sendDiscountConfirmation } = require('../emails/discountConfirmation');
+const Razorpay = require('razorpay');
+const crypto = require('crypto');
+
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_KEY_SECRET,
+});
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -40,48 +47,65 @@ router.post('/', async (req, res, next) => {
     }
 
     const orderNumber = generateOrderNumber();
+    let razorpayOrder = null;
+
+    // If Razorpay payment is selected, create order in Razorpay first
+    if (paymentMethod === 'upi' || paymentMethod === 'card') {
+      const options = {
+        amount: Math.round(parseFloat(total) * 100), // amount in the smallest currency unit
+        currency: "INR",
+        receipt: orderNumber,
+      };
+      try {
+        razorpayOrder = await razorpay.orders.create(options);
+      } catch (err) {
+        console.error('Razorpay order creation failed:', err);
+        return res.status(500).json({ error: 'Payment initialization failed' });
+      }
+    }
+
+    const orderData = {
+      orderNumber,
+      name,
+      email,
+      phone,
+      address,
+      city,
+      state,
+      pincode,
+      paymentMethod,
+      total: parseFloat(total),
+      discountCode: discountCode || null,
+      discountAmount: discountAmount ? parseFloat(discountAmount) : 0,
+      giftNote: giftNote || null,
+      razorpayOrderId: razorpayOrder ? razorpayOrder.id : null,
+      status: paymentMethod === 'cod' ? 'CONFIRMED' : 'PENDING',
+      items: {
+        create: items.map((item) => {
+          const opts = item.selectedOptions || {};
+          const size = opts.size || item.selectedSize || null;
+          const extraDetails = [
+            opts.fragrance,
+            opts.color,
+            opts.stand ? `Stand: ${opts.stand}` : null,
+            opts.personalization ? `Msg: ${opts.personalization}` : null
+          ].filter(Boolean).join(' | ');
+
+          return {
+            productSlug: item.productSlug,
+            productName: item.productName,
+            category: item.category,
+            price: parseFloat(item.price),
+            quantity: parseInt(item.quantity, 10),
+            selectedSize: size,
+            selectedFragrance: extraDetails || null,
+          };
+        }),
+      },
+    };
 
     const order = await prisma.order.create({
-      data: {
-        orderNumber,
-        name,
-        email,
-        phone,
-        address,
-        city,
-        state,
-        pincode,
-        paymentMethod,
-        total: parseFloat(total),
-        discountCode: discountCode || null,
-        discountAmount: discountAmount ? parseFloat(discountAmount) : 0,
-        giftNote: giftNote || null,
-        items: {
-          create: items.map((item) => {
-            const opts = item.selectedOptions || {};
-            // For candles, it's 'size' and 'fragrance'. 
-            // For resin, it's 'color', 'size', 'stand', 'personalization'.
-            // We'll combine them to fit into our schema fields.
-            const size = opts.size || item.selectedSize || null;
-            const extraDetails = [
-              opts.fragrance,
-              opts.color,
-              opts.stand ? `Stand: ${opts.stand}` : null,
-              opts.personalization ? `Msg: ${opts.personalization}` : null
-            ].filter(Boolean).join(' | ');
-
-            return {
-              productSlug: item.productSlug,
-              productName: item.productName,
-              category: item.category,
-              price: parseFloat(item.price),
-              quantity: parseInt(item.quantity, 10),
-              selectedSize: size,
-              selectedFragrance: extraDetails || null,
-            };
-          }),
-        },
-      },
+      data: orderData,
       include: { items: true },
     });
 
@@ -97,27 +121,34 @@ router.post('/', async (req, res, next) => {
       }
     }
 
-    // Fire emails (non-blocking — don't fail order if email fails)
-    try {
-      await Promise.all([
-        sendOrderConfirmation(order).catch(err => console.error('Customer email failed:', err.message)),
-        sendNewOrderAlert(order).catch(err => console.error('Admin alert failed:', err.message))
-      ]);
-    } catch (emailErr) {
-      console.error('Email dispatch system error:', emailErr.message);
+    // Only send emails immediately if it's COD. 
+    // For Razorpay, we wait for verification.
+    if (paymentMethod === 'cod') {
+      try {
+        await Promise.all([
+          sendOrderConfirmation(order).catch(err => console.error('Customer email failed:', err.message)),
+          sendNewOrderAlert(order).catch(err => console.error('Admin alert failed:', err.message))
+        ]);
+      } catch (emailErr) {
+        console.error('Email dispatch system error:', emailErr.message);
+      }
+
+      if (order.discountCode && order.discountAmount > 0) {
+        sendDiscountConfirmation(
+          order.email,
+          order.name,
+          order.discountCode,
+          order.discountAmount,
+          order.orderNumber
+        ).catch(err => console.error('Discount email error:', err));
+      }
     }
 
-    if (order.discountCode && order.discountAmount > 0) {
-      sendDiscountConfirmation(
-        order.email,
-        order.name,
-        order.discountCode,
-        order.discountAmount,
-        order.orderNumber
-      ).catch(err => console.error('Discount email error:', err));
-    }
-
-    res.status(201).json({ orderNumber: order.orderNumber, orderId: order.id });
+    res.status(201).json({ 
+      orderNumber: order.orderNumber, 
+      orderId: order.id,
+      razorpayOrderId: order.razorpayOrderId
+    });
   } catch (err) {
     next(err);
   }
@@ -187,6 +218,102 @@ router.patch('/:orderNumber/status', adminAuth, async (req, res, next) => {
   } catch (err) {
     if (err.code === 'P2025') return res.status(404).json({ error: 'Order not found' });
     next(err);
+  }
+});
+
+// ── POST /verify — Verify Razorpay Payment ────────────────────────────────────
+router.post('/verify', async (req, res, next) => {
+  try {
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+
+    const body = razorpay_order_id + "|" + razorpay_payment_id;
+    const expectedSignature = crypto
+      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+      .update(body.toString())
+      .digest("hex");
+
+    const isAuthentic = expectedSignature === razorpay_signature;
+
+    if (isAuthentic) {
+      // Update order in DB
+      const order = await prisma.order.update({
+        where: { razorpayOrderId: razorpay_order_id },
+        data: {
+          status: 'CONFIRMED',
+          paymentStatus: 'PAID',
+          razorpayPaymentId: razorpay_payment_id,
+          razorpaySignature: razorpay_signature
+        },
+        include: { items: true }
+      });
+
+      // Fire confirmation emails
+      try {
+        await Promise.all([
+          sendOrderConfirmation(order).catch(err => console.error('Customer email failed:', err.message)),
+          sendNewOrderAlert(order).catch(err => console.error('Admin alert failed:', err.message))
+        ]);
+      } catch (emailErr) {
+        console.error('Email dispatch system error:', emailErr.message);
+      }
+
+      res.json({ success: true, message: 'Payment verified successfully' });
+    } else {
+      res.status(400).json({ success: false, message: 'Invalid signature' });
+    }
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ── POST /webhook — Razorpay Webhook ──────────────────────────────────────────
+router.post('/webhook', async (req, res) => {
+  try {
+    const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
+    const signature = req.headers['x-razorpay-signature'];
+
+    const expectedSignature = crypto
+      .createHmac('sha256', secret)
+      .update(JSON.stringify(req.body))
+      .digest('hex');
+
+    if (expectedSignature !== signature) {
+      return res.status(400).send('Invalid signature');
+    }
+
+    const event = req.body.event;
+    const payload = req.body.payload;
+
+    if (event === 'payment.captured') {
+      const razorpayOrderId = payload.payment.entity.order_id;
+      const razorpayPaymentId = payload.payment.entity.id;
+
+      // Update order status if not already updated by verify route
+      const order = await prisma.order.findUnique({
+        where: { razorpayOrderId: razorpayOrderId }
+      });
+
+      if (order && order.paymentStatus !== 'PAID') {
+        const updatedOrder = await prisma.order.update({
+          where: { razorpayOrderId: razorpayOrderId },
+          data: {
+            status: 'CONFIRMED',
+            paymentStatus: 'PAID',
+            razorpayPaymentId: razorpayPaymentId
+          },
+          include: { items: true }
+        });
+
+        // Fire confirmation emails
+        sendOrderConfirmation(updatedOrder).catch(err => console.error('Webhook: Customer email failed:', err.message));
+        sendNewOrderAlert(updatedOrder).catch(err => console.error('Webhook: Admin alert failed:', err.message));
+      }
+    }
+
+    res.json({ status: 'ok' });
+  } catch (err) {
+    console.error('Webhook error:', err);
+    res.status(500).send('Webhook failed');
   }
 });
 
