@@ -68,8 +68,11 @@ router.post('/', async (req, res, next) => {
       try {
         razorpayOrder = await razorpay.orders.create(options);
       } catch (err) {
-        console.error('Razorpay order creation failed:', err);
-        return res.status(500).json({ error: 'Payment initialization failed' });
+        console.error('Razorpay order creation failed. Error details:', err);
+        return res.status(500).json({ 
+          error: 'Payment initialization failed',
+          details: err.description || err.message 
+        });
       }
     }
 
