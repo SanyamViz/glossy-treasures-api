@@ -7,10 +7,15 @@ const { sendDiscountConfirmation } = require('../emails/discountConfirmation');
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
 
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET,
-});
+let razorpay;
+try {
+  razorpay = new Razorpay({
+    key_id: process.env.RAZORPAY_KEY_ID,
+    key_secret: process.env.RAZORPAY_KEY_SECRET,
+  });
+} catch (err) {
+  console.error('Razorpay initialization failed. Check your environment variables.');
+}
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -51,6 +56,10 @@ router.post('/', async (req, res, next) => {
 
     // If Razorpay payment is selected, create order in Razorpay first
     if (paymentMethod === 'upi' || paymentMethod === 'card') {
+      if (!razorpay) {
+        console.error('Razorpay not initialized. Cannot create order.');
+        return res.status(500).json({ error: 'Payment gateway is currently unavailable' });
+      }
       const options = {
         amount: Math.round(parseFloat(total) * 100), // amount in the smallest currency unit
         currency: "INR",
@@ -224,6 +233,10 @@ router.patch('/:orderNumber/status', adminAuth, async (req, res, next) => {
 // ── POST /verify — Verify Razorpay Payment ────────────────────────────────────
 router.post('/verify', async (req, res, next) => {
   try {
+    if (!razorpay) {
+      console.error('Razorpay not initialized. Cannot verify payment.');
+      return res.status(500).json({ error: 'Payment gateway is currently unavailable' });
+    }
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
 
     const body = razorpay_order_id + "|" + razorpay_payment_id;
