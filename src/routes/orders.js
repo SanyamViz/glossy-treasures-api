@@ -44,7 +44,8 @@ router.post('/', async (req, res, next) => {
       name, email, phone,
       address, city, state, pincode,
       paymentMethod, total, giftNote,
-      items, discountCode, discountAmount
+      items, discountCode, discountAmount,
+      razorpayOrderId: preCreatedOrderId
     } = req.body;
 
     if (!name || !email || !phone || !address || !city || !state || !pincode || !paymentMethod || !total || !items?.length) {
@@ -54,8 +55,8 @@ router.post('/', async (req, res, next) => {
     const orderNumber = generateOrderNumber();
     let razorpayOrder = null;
 
-    // If Razorpay payment is selected, create order in Razorpay first
-    if (paymentMethod === 'upi' || paymentMethod === 'card') {
+    // If Razorpay payment is selected, create order in Razorpay if not already provided
+    if ((paymentMethod === 'upi' || paymentMethod === 'card') && !preCreatedOrderId) {
       if (!razorpay) {
         console.error('Razorpay not initialized. Cannot create order.');
         return res.status(500).json({ error: 'Payment gateway is currently unavailable' });
@@ -66,7 +67,8 @@ router.post('/', async (req, res, next) => {
         receipt: orderNumber,
       };
       try {
-        razorpayOrder = await razorpay.orders.create(options);
+        const order = await razorpay.orders.create(options);
+        razorpayOrder = order.id;
       } catch (err) {
         console.error('Razorpay order creation failed. Error details:', err);
         return res.status(500).json({ 
@@ -74,6 +76,8 @@ router.post('/', async (req, res, next) => {
           details: err.description || err.message 
         });
       }
+    } else if (preCreatedOrderId) {
+      razorpayOrder = preCreatedOrderId;
     }
 
     const orderData = {
@@ -90,7 +94,7 @@ router.post('/', async (req, res, next) => {
       discountCode: discountCode || null,
       discountAmount: discountAmount ? parseFloat(discountAmount) : 0,
       giftNote: giftNote || null,
-      razorpayOrderId: razorpayOrder ? razorpayOrder.id : null,
+      razorpayOrderId: razorpayOrder || null,
       status: paymentMethod === 'cod' ? 'CONFIRMED' : 'PENDING',
       items: {
         create: items.map((item) => {
