@@ -222,15 +222,32 @@ router.post('/verify', async (req, res, next) => {
       console.error('Razorpay not initialized. Cannot verify payment.');
       return res.status(500).json({ error: 'Payment gateway is currently unavailable' });
     }
+    console.log('--- STEP 1: Verification Request Received ---');
+    console.log('Payload:', JSON.stringify(req.body, null, 2));
+
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
 
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+      console.error('STEP 1.5: Missing verification fields');
+      return res.status(400).json({ success: false, message: 'Missing required verification fields' });
+    }
+
+    const secret = process.env.RAZORPAY_KEY_SECRET;
+    console.log('Using Secret (First 4 chars):', secret ? secret.substring(0, 4) + '...' : 'MISSING');
+
     const body = razorpay_order_id + "|" + razorpay_payment_id;
+    console.log('Generated Data String for HMAC:', body);
+
     const expectedSignature = crypto
-      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+      .createHmac("sha256", secret)
       .update(body.toString())
       .digest("hex");
 
+    console.log('Expected Signature:', expectedSignature);
+    console.log('Received Signature:', razorpay_signature);
+
     const isAuthentic = expectedSignature === razorpay_signature;
+    console.log('Signatures Match:', isAuthentic);
 
     if (isAuthentic) {
       // Update order in DB
@@ -272,7 +289,7 @@ router.post('/webhook', async (req, res) => {
 
     const expectedSignature = crypto
       .createHmac('sha256', secret)
-      .update(JSON.stringify(req.body))
+      .update(req.rawBody)
       .digest('hex');
 
     if (expectedSignature !== signature) {
