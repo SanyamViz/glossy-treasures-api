@@ -37,48 +37,28 @@ function adminAuth(req, res, next) {
   next();
 }
 
-// ── POST / — Create a new order ───────────────────────────────────────────────
+// ── POST / — Create a new order (DB ONLY) ─────────────────────────────────────
 router.post('/', async (req, res, next) => {
+  console.log('--- Order Creation Start ---');
+  console.log('Body:', JSON.stringify(req.body, null, 2));
+
   try {
     const {
       name, email, phone,
       address, city, state, pincode,
       paymentMethod, total, giftNote,
       items, discountCode, discountAmount,
-      razorpayOrderId: preCreatedOrderId
+      razorpayOrderId // Optional at this stage
     } = req.body;
 
-    if (!name || !email || !phone || !address || !city || !state || !pincode || !paymentMethod || !total || !items?.length) {
+    // 1. Validation
+    if (!name || !email || !phone || !address || !city || !state || !pincode || !paymentMethod || total === undefined || !items?.length) {
+      console.error('Validation failed: Missing fields');
       return res.status(400).json({ error: 'Missing required order fields' });
     }
 
     const orderNumber = generateOrderNumber();
-    let razorpayOrder = null;
-
-    // If Razorpay payment is selected, create order in Razorpay if not already provided
-    if ((paymentMethod === 'upi' || paymentMethod === 'card') && !preCreatedOrderId) {
-      if (!razorpay) {
-        console.error('Razorpay not initialized. Cannot create order.');
-        return res.status(500).json({ error: 'Payment gateway is currently unavailable' });
-      }
-      const options = {
-        amount: Math.round(parseFloat(total) * 100), // amount in the smallest currency unit
-        currency: "INR",
-        receipt: orderNumber,
-      };
-      try {
-        const order = await razorpay.orders.create(options);
-        razorpayOrder = order.id;
-      } catch (err) {
-        console.error('Razorpay order creation failed. Error details:', err);
-        return res.status(500).json({ 
-          error: 'Payment initialization failed',
-          details: err.description || err.message 
-        });
-      }
-    } else if (preCreatedOrderId) {
-      razorpayOrder = preCreatedOrderId;
-    }
+    console.log('Generated Order Number:', orderNumber);
 
     const orderData = {
       orderNumber,
@@ -94,7 +74,7 @@ router.post('/', async (req, res, next) => {
       discountCode: discountCode || null,
       discountAmount: discountAmount ? parseFloat(discountAmount) : 0,
       giftNote: giftNote || null,
-      razorpayOrderId: razorpayOrder || null,
+      razorpayOrderId: razorpayOrderId || null,
       status: paymentMethod === 'cod' ? 'CONFIRMED' : 'PENDING',
       items: {
         create: items.map((item) => {
@@ -120,12 +100,14 @@ router.post('/', async (req, res, next) => {
       },
     };
 
+    console.log('Saving to DB...');
     const order = await prisma.order.create({
       data: orderData,
       include: { items: true },
     });
+    console.log('Order saved in DB:', order.id);
 
-    // If a discount code was used, increment its usage count
+    // 2. Discount code usage
     if (discountCode) {
       try {
         await prisma.discountCode.update({
@@ -137,8 +119,7 @@ router.post('/', async (req, res, next) => {
       }
     }
 
-    // Only send emails immediately if it's COD. 
-    // For Razorpay, we wait for verification.
+    // 3. COD Emails
     if (paymentMethod === 'cod') {
       try {
         await Promise.all([
@@ -148,25 +129,16 @@ router.post('/', async (req, res, next) => {
       } catch (emailErr) {
         console.error('Email dispatch system error:', emailErr.message);
       }
-
-      if (order.discountCode && order.discountAmount > 0) {
-        sendDiscountConfirmation(
-          order.email,
-          order.name,
-          order.discountCode,
-          order.discountAmount,
-          order.orderNumber
-        ).catch(err => console.error('Discount email error:', err));
-      }
     }
 
     res.status(201).json({ 
+      success: true,
       orderNumber: order.orderNumber, 
-      orderId: order.id,
-      razorpayOrderId: order.razorpayOrderId
+      orderId: order.id
     });
   } catch (err) {
-    next(err);
+    console.error('ORDER API ERROR:', err);
+    res.status(500).json({ error: 'Internal Server Error', message: err.message });
   }
 });
 
