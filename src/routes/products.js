@@ -67,6 +67,24 @@ router.get('/', async (req, res) => {
   }
 });
 
+// GET /api/products/hamper — get all products marked for hamper
+router.get('/hamper', async (req, res) => {
+  try {
+    const products = await prisma.product.findMany({
+      where: { active: true, showInHamper: true },
+      orderBy: { category: 'asc' }
+    });
+    const normalized = products.map(p => ({
+      ...p,
+      price: p.basePrice,
+      image: p.images?.[0] || null,
+    }));
+    res.json(normalized);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch hamper products' });
+  }
+});
+
 // GET single product by slug (public)
 router.get('/:slug', async (req, res) => {
   try {
@@ -109,7 +127,7 @@ router.post('/', adminAuth, handleUpload, async (req, res) => {
       name, description, category, type, basePrice, originalPrice,
       badge, occasion, inStock, stock, bestseller, active,
       burnTime, scentFamily, ingredients,
-      sizes, fragrances, colors, personalization, customSize
+      sizes, fragrances, colors, personalization, customSize, showInHamper
     } = req.body;
 
     if (!name) throw new Error('Product name is required');
@@ -141,6 +159,7 @@ router.post('/', adminAuth, handleUpload, async (req, res) => {
         colors: (colors && colors !== 'undefined') ? JSON.parse(colors) : null,
         personalization: (personalization && personalization !== 'undefined') ? JSON.parse(personalization) : null,
         customSize: customSize || null,
+        showInHamper: showInHamper === 'true',
       }
     });
     console.log('Product created successfully:', product.id);
@@ -166,7 +185,7 @@ router.put('/:id', adminAuth, upload.array('images', 6), async (req, res) => {
       badge, occasion, inStock, stock, bestseller, active,
       burnTime, scentFamily, ingredients,
       sizes, fragrances, colors, personalization, customSize,
-      existingImages
+      existingImages, showInHamper
     } = req.body;
 
     const newImages = req.files ? req.files.map(f => f.path) : [];
@@ -198,6 +217,7 @@ router.put('/:id', adminAuth, upload.array('images', 6), async (req, res) => {
     if (colors !== undefined) updateData.colors = (colors && colors !== 'undefined') ? JSON.parse(colors) : null;
     if (personalization !== undefined) updateData.personalization = (personalization && personalization !== 'undefined') ? JSON.parse(personalization) : null;
     if (customSize !== undefined) updateData.customSize = customSize || null;
+    if (showInHamper !== undefined) updateData.showInHamper = showInHamper === 'true';
 
     const product = await prisma.product.update({
       where: { id: parseInt(req.params.id) },

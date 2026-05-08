@@ -127,6 +127,7 @@ model Product {
   colors          Json?
   personalization Json?
   customSize      String?
+  showInHamper    Boolean  @default(false)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }
