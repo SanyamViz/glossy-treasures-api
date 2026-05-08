@@ -109,7 +109,7 @@ router.post('/', adminAuth, handleUpload, async (req, res) => {
       name, description, category, type, basePrice, originalPrice,
       badge, occasion, inStock, stock, bestseller, active,
       burnTime, scentFamily, ingredients,
-      sizes, fragrances, colors, personalization
+      sizes, fragrances, colors, personalization, customSize
     } = req.body;
 
     if (!name) throw new Error('Product name is required');
@@ -140,6 +140,7 @@ router.post('/', adminAuth, handleUpload, async (req, res) => {
         fragrances: (fragrances && fragrances !== 'undefined') ? JSON.parse(fragrances) : null,
         colors: (colors && colors !== 'undefined') ? JSON.parse(colors) : null,
         personalization: (personalization && personalization !== 'undefined') ? JSON.parse(personalization) : null,
+        customSize: customSize || null,
       }
     });
     console.log('Product created successfully:', product.id);
@@ -164,7 +165,7 @@ router.put('/:id', adminAuth, upload.array('images', 6), async (req, res) => {
       name, description, category, type, basePrice, originalPrice,
       badge, occasion, inStock, stock, bestseller, active,
       burnTime, scentFamily, ingredients,
-      sizes, fragrances, colors, personalization,
+      sizes, fragrances, colors, personalization, customSize,
       existingImages
     } = req.body;
 
@@ -196,6 +197,7 @@ router.put('/:id', adminAuth, upload.array('images', 6), async (req, res) => {
     if (fragrances !== undefined) updateData.fragrances = (fragrances && fragrances !== 'undefined') ? JSON.parse(fragrances) : null;
     if (colors !== undefined) updateData.colors = (colors && colors !== 'undefined') ? JSON.parse(colors) : null;
     if (personalization !== undefined) updateData.personalization = (personalization && personalization !== 'undefined') ? JSON.parse(personalization) : null;
+    if (customSize !== undefined) updateData.customSize = customSize || null;
 
     const product = await prisma.product.update({
       where: { id: parseInt(req.params.id) },

@@ -1,22 +1,30 @@
 const express = require('express');
-const { sendWelcomeEmail } = require('../emails/welcomeEmail');
-const router = express.Router();
+const { PrismaClient } = require('@prisma/client');
+const { sendWelcomeCoupon } = require('../emails/welcomeCoupon');
 
-// POST /api/newsletter
-router.post('/', async (req, res, next) => {
+const router = express.Router();
+const prisma = new PrismaClient();
+
+// POST /api/newsletter/subscribe
+router.post('/subscribe', async (req, res) => {
   try {
     const { email } = req.body;
-    if (!email) {
-      return res.status(400).json({ error: 'Email is required' });
+    if (!email || !email.includes('@')) {
+      return res.status(400).json({ error: 'Valid email required' });
     }
 
-    // Attempt to send email
-    await sendWelcomeEmail(email);
+    // Get the active welcome coupon (first active discount code with type 'welcome')
+    // Or use a hardcoded welcome code
+    const welcomeCode = 'BLOOM10';
+    const discountValue = 10;
 
-    res.json({ success: true, message: 'Welcome email sent successfully' });
+    // Send the coupon email
+    await sendWelcomeCoupon(email, welcomeCode, discountValue);
+
+    res.json({ success: true, message: 'Coupon sent to your email!' });
   } catch (error) {
-    console.error('Newsletter email error:', error);
-    res.status(500).json({ error: 'Failed to send welcome email' });
+    console.error('Newsletter error:', error);
+    res.status(500).json({ error: 'Failed to send coupon' });
   }
 });
 

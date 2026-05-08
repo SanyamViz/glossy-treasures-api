@@ -126,6 +126,7 @@ model Product {
   fragrances      Json?
   colors          Json?
   personalization Json?
+  customSize      String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }
