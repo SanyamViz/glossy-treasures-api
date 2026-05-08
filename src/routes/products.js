@@ -47,7 +47,7 @@ router.get('/search', async (req, res) => {
 // GET all products (public)
 router.get('/', async (req, res) => {
   try {
-    const { category, type, occasion, bestseller, all } = req.query;
+    const { category, type, occasion, bestseller, featured, all, scentFamily } = req.query;
     const where = {};
     if (all !== 'true') where.active = true;
     if (category) where.category = {
@@ -56,11 +56,26 @@ router.get('/', async (req, res) => {
     };
     if (type) where.type = type;
     if (occasion) where.occasion = occasion;
-    if (bestseller) where.bestseller = true;
+    if (scentFamily) where.scentFamily = scentFamily;
+    
+    if (bestseller !== undefined) {
+      where.bestseller = (bestseller === 'true');
+    }
+    if (featured !== undefined) {
+      where.featured = (featured === 'true');
+    }
+    console.log('GET /api/products - Query params:', req.query);
+    console.log('GET /api/products - Computed where:', where);
     const products = await prisma.product.findMany({
       where,
       orderBy: { createdAt: 'desc' }
     });
+    console.log('DEBUG: GET /api/products - Result count:', products.length);
+    if (products.length > 0) {
+      console.log('DEBUG: First product featured value:', products[0].featured);
+      console.log('DEBUG: First product featured type:', typeof products[0].featured);
+      console.log('DEBUG: First product keys:', Object.keys(products[0]));
+    }
     res.json(products);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch products' });
@@ -114,6 +129,7 @@ const handleUpload = (req, res, next) => {
 
 // POST create product with image upload (admin)
 router.post('/', adminAuth, handleUpload, async (req, res) => {
+  console.log('DEBUG: POST /api/products Body:', req.body);
   console.log('--- Product Creation Start ---');
   console.log('Env Check:', {
     hasCloudName: !!process.env.CLOUDINARY_CLOUD_NAME,
@@ -125,7 +141,7 @@ router.post('/', adminAuth, handleUpload, async (req, res) => {
   try {
     const {
       name, description, category, type, basePrice, originalPrice,
-      badge, occasion, inStock, stock, bestseller, active,
+      badge, occasion, inStock, stock, bestseller, featured, active,
       burnTime, scentFamily, ingredients,
       sizes, fragrances, colors, personalization, customSize, showInHamper
     } = req.body;
@@ -135,8 +151,7 @@ router.post('/', adminAuth, handleUpload, async (req, res) => {
     const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     const images = req.files ? req.files.map(f => f.path) : [];
 
-    const product = await prisma.product.create({
-      data: {
+    const data = {
         slug,
         name,
         description,
@@ -147,10 +162,11 @@ router.post('/', adminAuth, handleUpload, async (req, res) => {
         images,
         badge: badge || null,
         occasion: occasion || null,
-        inStock: inStock === 'true',
+        inStock: (inStock === 'true' || inStock === true),
         stock: parseInt(stock) || 0,
-        bestseller: bestseller === 'true',
-        active: active !== 'false',
+        bestseller: (bestseller === 'true' || bestseller === true),
+        featured: (featured === 'true' || featured === true),
+        active: (active !== 'false' && active !== false),
         burnTime: burnTime || null,
         scentFamily: scentFamily || null,
         ingredients: ingredients || null,
@@ -160,7 +176,11 @@ router.post('/', adminAuth, handleUpload, async (req, res) => {
         personalization: (personalization && personalization !== 'undefined') ? JSON.parse(personalization) : null,
         customSize: customSize || null,
         showInHamper: showInHamper === 'true',
-      }
+      };
+    console.log('Creation Data for Prisma:', data);
+
+    const product = await prisma.product.create({
+      data
     });
     console.log('Product created successfully:', product.id);
     res.status(201).json(product);
@@ -178,11 +198,12 @@ router.post('/', adminAuth, handleUpload, async (req, res) => {
 
 // PUT update product (admin)
 router.put('/:id', adminAuth, upload.array('images', 6), async (req, res) => {
+  console.log('DEBUG: PUT /api/products Body:', req.body);
   console.log('--- Product Update Start ---', req.params.id);
   try {
     const {
       name, description, category, type, basePrice, originalPrice,
-      badge, occasion, inStock, stock, bestseller, active,
+      badge, occasion, inStock, stock, bestseller, featured, active,
       burnTime, scentFamily, ingredients,
       sizes, fragrances, colors, personalization, customSize,
       existingImages, showInHamper
@@ -205,10 +226,11 @@ router.put('/:id', adminAuth, upload.array('images', 6), async (req, res) => {
     if (images.length > 0) updateData.images = images;
     if (badge !== undefined) updateData.badge = badge || null;
     if (occasion !== undefined) updateData.occasion = occasion || null;
-    if (inStock !== undefined) updateData.inStock = inStock === 'true';
+    if (inStock !== undefined) updateData.inStock = (inStock === 'true' || inStock === true);
     if (stock !== undefined) updateData.stock = parseInt(stock) || 0;
-    if (bestseller !== undefined) updateData.bestseller = bestseller === 'true';
-    if (active !== undefined) updateData.active = active !== 'false';
+    if (bestseller !== undefined) updateData.bestseller = (bestseller === 'true' || bestseller === true);
+    if (featured !== undefined) updateData.featured = (featured === 'true' || featured === true);
+    if (active !== undefined) updateData.active = (active !== 'false' && active !== false);
     if (burnTime !== undefined) updateData.burnTime = burnTime || null;
     if (scentFamily !== undefined) updateData.scentFamily = scentFamily || null;
     if (ingredients !== undefined) updateData.ingredients = ingredients || null;
@@ -219,6 +241,7 @@ router.put('/:id', adminAuth, upload.array('images', 6), async (req, res) => {
     if (customSize !== undefined) updateData.customSize = customSize || null;
     if (showInHamper !== undefined) updateData.showInHamper = showInHamper === 'true';
 
+    console.log('Update Data for Prisma:', updateData);
     const product = await prisma.product.update({
       where: { id: parseInt(req.params.id) },
       data: updateData

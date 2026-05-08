@@ -1,3 +1,4 @@
+// Restart to pick up schema changes
 require('dotenv').config();
 console.log('Environment loaded. Razorpay ID:', process.env.RAZORPAY_KEY_ID ? 'Exists' : 'Missing');
 const express = require('express');
