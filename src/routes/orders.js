@@ -88,6 +88,7 @@ router.post('/', async (req, res, next) => {
             selectedFragrance: item.selectedFragrance || null,
             selectedColor: item.selectedColor || null,
             personalization: item.personalization || null,
+            selectedOptions: item.selectedOptions || null,
           };
         }),
       },

@@ -17,6 +17,18 @@ function buildAdminItemRows(items) {
           Slug: ${item.productSlug} &bull; ${item.category}
           ${item.selectedSize ? ` &bull; Size: ${item.selectedSize}` : ''}
           ${item.selectedFragrance ? ` &bull; ${item.category === 'candle' ? 'Fragrance' : 'Options'}: ${item.selectedFragrance}` : ''}
+          ${item.selectedOptions?.items ? `
+            <div style="margin-top: 8px; padding: 10px; background: #fff8ed; border: 1px solid #e8d5b5; border-radius: 6px;">
+              <strong style="font-size: 11px; color: #5c3317; text-transform: uppercase;">📦 HAMPER BREAKDOWN:</strong>
+              ${item.selectedOptions.items.map(hi => `
+                <div style="font-size: 13px; color: #2d1b0e; margin-top: 4px; font-weight: 500;">
+                  • [${hi.type.toUpperCase()}] ${hi.productName} ${hi.quantity > 1 ? `(x${hi.quantity})` : ''}
+                </div>
+              `).join('')}
+              ${item.selectedOptions.giftNote ? `<div style="margin-top:8px; font-size:12px; color:#5c4a37; border-top:1px solid #e8d5b5; padding-top:5px;"><strong>Note:</strong> ${item.selectedOptions.giftNote}</div>` : ''}
+              ${item.selectedOptions.ribbon ? `<div style="font-size:12px; color:#5c4a37;"><strong>Ribbon:</strong> ${item.selectedOptions.ribbon}</div>` : ''}
+            </div>
+          ` : ''}
         </div>
       </td>
       <td style="padding: 10px 8px; border-bottom: 1px solid #e8d5b5; text-align:center; font-size:14px; color:#5c4a37;">x${item.quantity}</td>

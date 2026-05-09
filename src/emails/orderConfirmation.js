@@ -38,6 +38,16 @@ function buildItemRows(items) {
           ${item.selectedSize ? ` &bull; Size: ${item.selectedSize}` : ''}
           ${item.selectedColor ? ` &bull; Color: ${item.selectedColor}` : ''}
           ${item.selectedFragrance ? ` &bull; ${item.category === 'candle' ? 'Fragrance' : 'Options'}: ${item.selectedFragrance}` : ''}
+          ${item.selectedOptions?.items ? `
+            <div style="margin-top: 6px; padding: 6px; background: #faf8f5; border-radius: 4px; border: 1px solid #eee;">
+              <strong style="font-size: 10px; color: #7a6252; text-transform: uppercase;">Hamper Contents:</strong>
+              ${item.selectedOptions.items.map(hi => `
+                <div style="font-size: 11px; color: #5c4a37; margin-top: 2px;">
+                  • ${hi.productName} ${hi.quantity > 1 ? `(x${hi.quantity})` : ''}
+                </div>
+              `).join('')}
+            </div>
+          ` : ''}
         </div>
       </td>
       <td style="padding: 12px 8px; border-bottom: 1px solid #f0e6d3; text-align: center; color: #5c4a37; font-size: 14px;">

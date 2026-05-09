@@ -69,6 +69,7 @@ model OrderItem {
   selectedFragrance String?
   selectedColor     String?
   personalization   String?
+  selectedOptions   Json?
   order             Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
 }
 
