@@ -106,7 +106,7 @@ async function sendOrderConfirmation(order) {
               </p>
               <div style="margin-top: 24px; padding: 16px; background: #fdf6ee; border-left: 4px solid #C4948A; border-radius: 4px;">
                 <p style="margin:0; font-size:14px; color:#7a6252; font-style:italic;">
-                  "Angel will handcraft your order with love and ship it within 2-3 days." 🕯️
+                  "We will handcraft your order with love and ship it within 2-3 days." 🕯️
                 </p>
               </div>
             </td>
