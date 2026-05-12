@@ -49,7 +49,7 @@ app.use('/api/wholesale', wholesaleRouter);
 app.use('/api/discounts', discountRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/newsletter', newsletterRoutes);
-app.use('/api/orders', paymentsRouter); // Maps to /api/create-order
+app.use('/api', paymentsRouter); // Provides /api/create-order
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/upload', uploadRoutes);
 

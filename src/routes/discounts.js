@@ -3,7 +3,7 @@ const router = express.Router();
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-const ADMIN_PASSWORD = 'glossy2024';
+const ADMIN_PASSWORD = 'AngelManchanda@152116';
 
 // Middleware to check admin auth
 const adminAuth = (req, res, next) => {
