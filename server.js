@@ -12,6 +12,7 @@ const productRoutes = require('./src/routes/products');
 const newsletterRoutes = require('./src/routes/newsletter');
 const paymentsRouter = require('./src/routes/payments');
 const reviewRoutes = require('./src/routes/reviews');
+const uploadRoutes = require('./src/routes/upload');
 
 const errorHandler = require('./src/middleware/errorHandler');
 
@@ -50,6 +51,7 @@ app.use('/api/products', productRoutes);
 app.use('/api/newsletter', newsletterRoutes);
 app.use('/api/orders', paymentsRouter); // Maps to /api/create-order
 app.use('/api/reviews', reviewRoutes);
+app.use('/api/upload', uploadRoutes);
 
 
 // ── 404 ───────────────────────────────────────────────────────────────────────

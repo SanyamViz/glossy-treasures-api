@@ -48,6 +48,21 @@ function buildItemRows(items) {
               `).join('')}
             </div>
           ` : ''}
+          ${(() => {
+            if (!item.personalization) return '';
+            try {
+              const p = typeof item.personalization === 'string' ? JSON.parse(item.personalization) : item.personalization;
+              return `
+                <div style="margin-top: 6px; padding: 6px; background: #faf8f5; border-radius: 4px; border: 1px solid #eee;">
+                  <strong style="font-size: 10px; color: #7a6252; text-transform: uppercase;">Personalization:</strong>
+                  ${p.name ? `<div style="font-size: 11px; color: #5c4a37; margin-top: 2px;">Name: ${p.name}</div>` : ''}
+                  ${p.date ? `<div style="font-size: 11px; color: #5c4a37; margin-top: 2px;">Date: ${p.date}</div>` : ''}
+                  ${p.message ? `<div style="font-size: 11px; color: #5c4a37; margin-top: 2px;">Message: ${p.message}</div>` : ''}
+                  ${p.photo ? `<div style="margin-top: 4px;"><a href="${p.photo}" target="_blank" style="font-size: 11px; color: #C4948A;">View Attached Photo</a></div>` : ''}
+                </div>
+              `;
+            } catch(e) { return ''; }
+          })()}
         </div>
       </td>
       <td style="padding: 12px 8px; border-bottom: 1px solid #f0e6d3; text-align: center; color: #5c4a37; font-size: 14px;">

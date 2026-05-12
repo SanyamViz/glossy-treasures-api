@@ -30,6 +30,21 @@ function buildAdminItemRows(items) {
             </div>
           ` : ''}
         </div>
+        ${(() => {
+          if (!item.personalization) return '';
+          try {
+            const p = typeof item.personalization === 'string' ? JSON.parse(item.personalization) : item.personalization;
+            return `
+              <div style="margin-top: 8px; padding: 10px; background: #fff8ed; border: 1px solid #e8d5b5; border-radius: 6px;">
+                <strong style="font-size: 11px; color: #5c3317; text-transform: uppercase;">✨ PERSONALIZATION:</strong>
+                ${p.name ? `<div style="font-size: 13px; color: #2d1b0e; margin-top: 4px;">Name: ${p.name}</div>` : ''}
+                ${p.date ? `<div style="font-size: 13px; color: #2d1b0e; margin-top: 4px;">Date: ${p.date}</div>` : ''}
+                ${p.message ? `<div style="font-size: 13px; color: #2d1b0e; margin-top: 4px;">Message: ${p.message}</div>` : ''}
+                ${p.photo ? `<div style="margin-top: 6px;"><img src="${p.photo}" alt="Uploaded Photo" style="max-width: 120px; border-radius: 6px; border: 1px solid #e8d5b5;" /></div>` : ''}
+              </div>
+            `;
+          } catch(e) { return ''; }
+        })()}
       </td>
       <td style="padding: 10px 8px; border-bottom: 1px solid #e8d5b5; text-align:center; font-size:14px; color:#5c4a37;">x${item.quantity}</td>
       <td style="padding: 10px 8px; border-bottom: 1px solid #e8d5b5; text-align:right; font-size:14px; font-weight:600; color:#b07d4a;">${formatINR(item.price * item.quantity)}</td>
