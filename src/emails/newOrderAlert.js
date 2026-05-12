@@ -40,6 +40,7 @@ function buildAdminItemRows(items) {
                 ${p.name ? `<div style="font-size: 13px; color: #2d1b0e; margin-top: 4px;">Name: ${p.name}</div>` : ''}
                 ${p.date ? `<div style="font-size: 13px; color: #2d1b0e; margin-top: 4px;">Date: ${p.date}</div>` : ''}
                 ${p.message ? `<div style="font-size: 13px; color: #2d1b0e; margin-top: 4px;">Message: ${p.message}</div>` : ''}
+                ${p.photos && Array.isArray(p.photos) ? `<div style="margin-top: 6px;">${p.photos.map(u => `<img src="${u}" alt="Uploaded Photo" style="max-width: 120px; border-radius: 6px; border: 1px solid #e8d5b5; margin-right: 4px; margin-bottom: 4px;" />`).join('')}</div>` : ''}
                 ${p.photo ? `<div style="margin-top: 6px;"><img src="${p.photo}" alt="Uploaded Photo" style="max-width: 120px; border-radius: 6px; border: 1px solid #e8d5b5;" /></div>` : ''}
               </div>
             `;

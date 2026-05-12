@@ -58,6 +58,7 @@ function buildItemRows(items) {
                   ${p.name ? `<div style="font-size: 11px; color: #5c4a37; margin-top: 2px;">Name: ${p.name}</div>` : ''}
                   ${p.date ? `<div style="font-size: 11px; color: #5c4a37; margin-top: 2px;">Date: ${p.date}</div>` : ''}
                   ${p.message ? `<div style="font-size: 11px; color: #5c4a37; margin-top: 2px;">Message: ${p.message}</div>` : ''}
+                  ${p.photos && Array.isArray(p.photos) ? `<div style="margin-top: 4px;">${p.photos.map((u, i) => `<a href="${u}" target="_blank" style="font-size: 11px; color: #C4948A; display: inline-block; margin-right: 8px;">View Photo ${i+1}</a>`).join('')}</div>` : ''}
                   ${p.photo ? `<div style="margin-top: 4px;"><a href="${p.photo}" target="_blank" style="font-size: 11px; color: #C4948A;">View Attached Photo</a></div>` : ''}
                 </div>
               `;
