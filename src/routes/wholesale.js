@@ -43,7 +43,7 @@ router.post('/', async (req, res, next) => {
       await resend.emails.send({
         from: 'Glossy Treasures <orders@glossytreasures.shop>',
         to: adminEmail,
-        subject: \`Bulk Enquiry from \${business} (\${name})\`,
+        subject: `Bulk Enquiry from ${business} (${name})`,
         html,
       });
     } catch (emailErr) {
