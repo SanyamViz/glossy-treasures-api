@@ -133,3 +133,16 @@ model Product {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }
+
+model Wishlist {
+  id           Int      @id @default(autoincrement())
+  userEmail    String
+  productSlug  String
+  productName  String
+  productImage String?
+  price        Float
+  category     String
+  createdAt    DateTime @default(now())
+
+  @@unique([userEmail, productSlug])
+}

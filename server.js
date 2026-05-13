@@ -13,6 +13,7 @@ const newsletterRoutes = require('./src/routes/newsletter');
 const paymentsRouter = require('./src/routes/payments');
 const reviewRoutes = require('./src/routes/reviews');
 const uploadRoutes = require('./src/routes/upload');
+const wishlistRoutes = require('./src/routes/wishlist');
 
 const errorHandler = require('./src/middleware/errorHandler');
 
@@ -52,6 +53,7 @@ app.use('/api/newsletter', newsletterRoutes);
 app.use('/api', paymentsRouter); // Provides /api/create-order
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/wishlist', wishlistRoutes);
 
 
 // ── 404 ───────────────────────────────────────────────────────────────────────
