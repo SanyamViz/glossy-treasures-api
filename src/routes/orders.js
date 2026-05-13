@@ -277,27 +277,56 @@ router.post('/verify', async (req, res, next) => {
 
 // ── POST /webhook — Razorpay Webhook ──────────────────────────────────────────
 router.post('/webhook', async (req, res) => {
+  console.log('--- RAZORPAY WEBHOOK HIT ---');
   try {
     const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
     const signature = req.headers['x-razorpay-signature'];
 
-    const expectedSignature = crypto
-      .createHmac('sha256', secret)
-      .update(req.rawBody)
-      .digest('hex');
+    if (!secret) {
+      console.error('Webhook Error: RAZORPAY_WEBHOOK_SECRET is missing');
+      return res.status(500).json({ error: 'Webhook secret not configured' });
+    }
 
-    if (expectedSignature !== signature) {
+    if (!signature) {
+      console.error('Webhook Error: No signature found');
+      return res.status(400).json({ error: 'No signature' });
+    }
+
+    if (!req.rawBody) {
+      console.error('Webhook Error: req.rawBody is missing');
+      return res.status(500).json({ error: 'Raw body missing' });
+    }
+
+    // Convert Buffer to string for validation
+    const rawBodyString = req.rawBody.toString('utf-8');
+
+    const isValid = Razorpay.validateWebhookSignature(
+      rawBodyString,
+      signature,
+      secret
+    );
+
+    console.log('Signature Validation Result:', isValid);
+
+    if (!isValid) {
+      console.error('Webhook Error: Invalid signature match');
       return res.status(400).send('Invalid signature');
     }
 
+    // Acknowledge receipt immediately to prevent timeouts
+    res.json({ status: 'ok' });
+
+    // Process event asynchronously
     const event = req.body.event;
     const payload = req.body.payload;
+    console.log('Webhook Event Received:', event);
 
     if (event === 'payment.captured') {
       const razorpayOrderId = payload.payment.entity.order_id;
       const razorpayPaymentId = payload.payment.entity.id;
+      
+      console.log(`Processing captured payment: ${razorpayOrderId}`);
 
-      // Update order status if not already updated by verify route
       const order = await prisma.order.findUnique({
         where: { razorpayOrderId: razorpayOrderId }
       });
@@ -313,16 +342,18 @@ router.post('/webhook', async (req, res) => {
           include: { items: true }
         });
 
-        // Fire confirmation emails
-        sendOrderConfirmation(updatedOrder).catch(err => console.error('Webhook: Customer email failed:', err.message));
-        sendNewOrderAlert(updatedOrder).catch(err => console.error('Webhook: Admin alert failed:', err.message));
+        // Fire emails
+        sendOrderConfirmation(updatedOrder).catch(err => console.error('Webhook Email Error:', err.message));
+        sendNewOrderAlert(updatedOrder).catch(err => console.error('Webhook Alert Error:', err.message));
+        console.log(`Order ${order.orderNumber} successfully updated via Webhook`);
       }
     }
-
-    res.json({ status: 'ok' });
   } catch (err) {
-    console.error('Webhook error:', err);
-    res.status(500).send('Webhook failed');
+    console.error('CRITICAL Webhook Error:', err);
+    // If we haven't sent a response yet, send a 500
+    if (!res.headersSent) {
+      res.status(500).send('Internal Error');
+    }
   }
 });
 
